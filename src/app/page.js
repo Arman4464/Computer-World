@@ -1,29 +1,7 @@
-'use client'
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/client'
-import Header from '@/components/Header'
+import StaticHeader from '@/components/StaticHeader'
 
 export default function Home() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  useEffect(() => {
-    async function getUser() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setUser(session?.user || null)
-      } catch (error) {
-        console.error('Error getting session:', error)
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-    getUser()
-  }, [])
-
   const services = [
     {
       name: "Screen Replacement",
@@ -127,7 +105,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <StaticHeader />
       
       {/* Add pt-16 to account for fixed header */}
       <div className="pt-16">
@@ -147,19 +125,12 @@ export default function Home() {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                  {loading ? (
-                    <div className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-bold text-lg text-center flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mr-2"></div>
-                      Loading...
-                    </div>
-                  ) : (
-                    <Link 
-                      href={user ? "/book-appointment" : "/login"}
-                      className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all duration-300 shadow-lg text-center"
-                    >
-                      📅 Book Instant Appointment
-                    </Link>
-                  )}
+                  <Link 
+                    href="/login"
+                    className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all duration-300 shadow-lg text-center"
+                  >
+                    📅 Book Instant Appointment
+                  </Link>
                   <a 
                     href="tel:+919876543210"
                     className="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-yellow-600 transition-all duration-300 shadow-lg text-center"
@@ -200,19 +171,12 @@ export default function Home() {
                       <span>📍 Location</span>
                       <span className="text-sm opacity-80">Your area in Surat</span>
                     </div>
-                    {loading ? (
-                      <div className="w-full bg-white text-yellow-600 py-3 rounded-lg font-bold text-center flex items-center justify-center">
-                        <div className="w-5 h-5 border-2 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mr-2"></div>
-                        Loading...
-                      </div>
-                    ) : (
-                      <Link 
-                        href={user ? "/book-appointment" : "/login"}
-                        className="block w-full bg-white text-yellow-600 py-3 rounded-lg font-bold text-center hover:bg-gray-100 transition-colors"
-                      >
-                        Get My Quote Now →
-                      </Link>
-                    )}
+                    <Link 
+                      href="/login"
+                      className="block w-full bg-white text-yellow-600 py-3 rounded-lg font-bold text-center hover:bg-gray-100 transition-colors"
+                    >
+                      Get My Quote Now →
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -253,18 +217,12 @@ export default function Home() {
                   </div>
                   
                   <div className="text-center">
-                    {loading ? (
-                      <div className="inline-block bg-yellow-500 text-white px-8 py-3 rounded-lg font-semibold">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
-                      </div>
-                    ) : (
-                      <Link 
-                        href={user ? "/book-appointment" : "/login"}
-                        className="inline-block bg-yellow-500 text-white px-8 py-3 rounded-lg hover:bg-yellow-600 transition-colors font-semibold group-hover:shadow-lg"
-                      >
-                        Book Now
-                      </Link>
-                    )}
+                    <Link 
+                      href="/login"
+                      className="inline-block bg-yellow-500 text-white px-8 py-3 rounded-lg hover:bg-yellow-600 transition-colors font-semibold group-hover:shadow-lg"
+                    >
+                      Book Now
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -304,18 +262,12 @@ export default function Home() {
                     <div className="text-gray-600">Support Available</div>
                   </div>
                 </div>
-                {loading ? (
-                  <div className="inline-block bg-yellow-500 text-white px-8 py-3 rounded-lg font-semibold">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  </div>
-                ) : (
-                  <Link 
-                    href={user ? "/book-appointment" : "/register"}
-                    className="inline-block bg-yellow-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
-                  >
-                    Get Started Today
-                  </Link>
-                )}
+                <Link 
+                  href="/register"
+                  className="inline-block bg-yellow-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+                >
+                  Get Started Today
+                </Link>
               </div>
               <div className="relative">
                 <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl p-8 text-white">
@@ -422,19 +374,12 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              {loading ? (
-                <div className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-bold text-lg shadow-lg flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mr-2"></div>
-                  Loading...
-                </div>
-              ) : (
-                <Link 
-                  href={user ? "/book-appointment" : "/login"}
-                  className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
-                >
-                  📅 Book Appointment Now
-                </Link>
-              )}
+              <Link 
+                href="/login"
+                className="bg-white text-yellow-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
+              >
+                📅 Book Appointment Now
+              </Link>
               <a 
                 href="tel:+919876543210"
                 className="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-yellow-600 transition-colors shadow-lg"
@@ -487,16 +432,7 @@ export default function Home() {
                   <li><Link href="#services" className="hover:text-yellow-400 transition-colors">Services</Link></li>
                   <li><Link href="#about" className="hover:text-yellow-400 transition-colors">About Us</Link></li>
                   <li><Link href="#testimonials" className="hover:text-yellow-400 transition-colors">Reviews</Link></li>
-                  <li>
-                    {loading ? (
-                      <span className="text-gray-500">Loading...</span>
-                    ) : (
-                      <Link href={user ? "/book-appointment" : "/login"} className="hover:text-yellow-400 transition-colors">Book Appointment</Link>
-                    )}
-                  </li>
-                  {!loading && user && (
-                    <li><Link href="/dashboard" className="hover:text-yellow-400 transition-colors">Dashboard</Link></li>
-                  )}
+                  <li><Link href="/login" className="hover:text-yellow-400 transition-colors">Book Appointment</Link></li>
                 </ul>
               </div>
               
