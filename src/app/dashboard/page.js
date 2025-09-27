@@ -6,6 +6,7 @@ import Link from 'next/link'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
+  const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -13,102 +14,89 @@ export default function Dashboard() {
   useEffect(() => {
     async function getUser() {
       try {
-        console.log('Dashboard: Checking session...')
         const { data: { session } } = await supabase.auth.getSession()
         
-        console.log('Dashboard: Session data:', session)
-        
         if (session?.user) {
-          console.log('Dashboard: User found:', session.user.email)
           setUser(session.user)
-          setLoading(false)
+          // Fetch user appointments
+          await fetchAppointments(session.user.id)
         } else {
-          console.log('Dashboard: No user, redirecting to login')
-          // Clear any cached state
-          setUser(null)
-          setLoading(false)
-          // Force redirect
           window.location.href = '/login'
           return
         }
       } catch (error) {
-        console.error('Dashboard: Error checking session:', error)
-        setUser(null)
-        setLoading(false)
+        console.error('Error:', error)
         window.location.href = '/login'
+      } finally {
+        setLoading(false)
       }
     }
 
     getUser()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Dashboard: Auth state changed:', event, session)
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        console.log('Dashboard: User signed out, redirecting to login')
-        setUser(null)
-        window.location.href = '/login'
-      } else if (event === 'SIGNED_IN' && session) {
-        console.log('Dashboard: User signed in:', session.user.email)
-        setUser(session.user)
-        setLoading(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
   }, [router])
+
+  const fetchAppointments = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setAppointments(data || [])
+    } catch (error) {
+      console.error('Error fetching appointments:', error)
+    }
+  }
 
   const handleSignOut = async () => {
     try {
-      console.log('Dashboard: Signing out...')
       await supabase.auth.signOut()
-      setUser(null)
-      // Force redirect to home
       window.location.href = '/'
     } catch (error) {
-      console.error('Dashboard: Sign out error:', error)
-      // Force redirect even if error
+      console.error('Sign out error:', error)
       window.location.href = '/'
     }
   }
 
-  // Show loading while checking auth
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
-  // Show nothing while redirecting
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    )
-  }
+  if (!user) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header with Navigation */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">CW</span>
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+              <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold">CW</span>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">COMPUTER WORLD</h1>
+                  <p className="text-xs text-yellow-600">Dashboard</p>
+                </div>
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
+              <Link 
+                href="/"
+                className="text-gray-600 hover:text-yellow-600 transition-colors font-medium"
+              >
+                Home
+              </Link>
               <span className="text-gray-600">Hello, {user.email}</span>
               <button
                 onClick={handleSignOut}
@@ -122,44 +110,119 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
+          <p className="text-gray-600">Manage your appointments and services</p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Welcome Back!</h2>
-            <p className="text-gray-600 mb-4">You're successfully logged in to Computer World.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Book New Service</h3>
+            <p className="text-gray-600 mb-4">Choose from our professional repair services</p>
             <Link
               href="/book-appointment"
-              className="inline-block bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+              className="inline-block bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition-colors font-semibold"
             >
-              Book Service
+              Book Appointment
             </Link>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
-            <p className="text-gray-600">Email: {user.email}</p>
-            <p className="text-gray-600">Member since: {new Date(user.created_at).toLocaleDateString()}</p>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Info</h3>
             <div className="space-y-2">
-              <Link href="/book-appointment" className="block text-yellow-600 hover:text-yellow-800">📅 Book Appointment</Link>
-              <a href="tel:+919876543210" className="block text-gray-600 hover:text-gray-800">📞 Call Support</a>
-              <a href="https://wa.me/919876543210" className="block text-green-600 hover:text-green-800">💬 WhatsApp</a>
+              <p className="text-sm text-gray-600">Email: {user.email}</p>
+              <p className="text-sm text-gray-600">
+                Name: {user.user_metadata?.full_name || 'Not provided'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Phone: {user.user_metadata?.phone || 'Not provided'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Member since: {new Date(user.created_at).toLocaleDateString()}
+              </p>
             </div>
           </div>
 
-          {/* Success indicator */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 md:col-span-2 lg:col-span-3">
-            <div className="flex items-center">
-              <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <div>
-                <h3 className="text-lg font-semibold text-green-800">Authentication Working!</h3>
-                <p className="text-green-700">Login/logout flow is working correctly.</p>
-              </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Contact</h3>
+            <div className="space-y-3">
+              <a 
+                href="tel:+919876543210" 
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <span className="mr-2">📞</span>
+                Call Support
+              </a>
+              <a 
+                href="https://wa.me/919876543210" 
+                className="flex items-center text-green-600 hover:text-green-800 transition-colors"
+              >
+                <span className="mr-2">💬</span>
+                WhatsApp Chat
+              </a>
+              <Link 
+                href="/#contact"
+                className="flex items-center text-yellow-600 hover:text-yellow-800 transition-colors"
+              >
+                <span className="mr-2">📧</span>
+                Contact Form
+              </Link>
             </div>
+          </div>
+        </div>
+
+        {/* Appointments Section */}
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Your Appointments</h3>
+              <span className="text-sm text-gray-500">{appointments.length} appointments</span>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            {appointments.length > 0 ? (
+              <div className="space-y-4">
+                {appointments.map((appointment) => (
+                  <div key={appointment.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{appointment.service_type}</h4>
+                        <p className="text-gray-600">{appointment.description}</p>
+                        <p className="text-sm text-gray-500">
+                          {appointment.address}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Booked on: {new Date(appointment.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                        appointment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {appointment.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📅</div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">No appointments yet</h4>
+                <p className="text-gray-600 mb-6">Book your first service with Computer World</p>
+                <Link
+                  href="/book-appointment"
+                  className="inline-block bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition-colors font-semibold"
+                >
+                  Book Your First Service
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </main>
