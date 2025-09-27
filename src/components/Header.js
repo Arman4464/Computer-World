@@ -1,23 +1,58 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, signOut, loading } = useAuth()
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    let mounted = true
+
+    async function getUser() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (mounted) {
+          setUser(session?.user || null)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error getting session:', error)
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
+      }
+    }
+
+    getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted) {
+        console.log('Auth state changed:', event)
+        setUser(session?.user || null)
+      }
+    })
+
+    return () => {
+      mounted = false
+      subscription?.unsubscribe()
+    }
+  }, [])
 
   const handleSignOut = async () => {
-    const { error } = await signOut()
-    if (!error) {
-      router.push('/')
-    }
+    await supabase.auth.signOut()
+    setUser(null)
+    router.push('/')
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-lg">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -67,7 +102,7 @@ export default function Header() {
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="text-gray-500 hover:text-red-600 transition-colors"
+                    className="text-gray-500 hover:text-red-600 transition-colors p-1"
                     title="Sign Out"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,13 +114,13 @@ export default function Header() {
             ) : (
               <div className="flex items-center space-x-4">
                 <Link href="/login" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors">
-                  Sign In
+                  Login
                 </Link>
                 <Link 
                   href="/register"
                   className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-6 py-2 rounded-full hover:from-yellow-600 hover:to-yellow-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl"
                 >
-                  Get Started
+                  Sign Up
                 </Link>
               </div>
             )}
@@ -131,7 +166,7 @@ export default function Header() {
                 ) : user ? (
                   <>
                     <div className="px-3 py-2 text-sm text-gray-600">
-                      Signed in as {user.email}
+                      Hello, {user.email?.split('@')[0]}
                     </div>
                     <Link href="/dashboard" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
                       Dashboard
@@ -149,10 +184,10 @@ export default function Header() {
                 ) : (
                   <>
                     <Link href="/login" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
-                      Sign In
+                      Login
                     </Link>
                     <Link href="/register" className="block mx-3 my-2 bg-yellow-500 text-white px-6 py-3 rounded-lg text-center font-semibold hover:bg-yellow-600 transition-colors">
-                      Get Started
+                      Sign Up
                     </Link>
                   </>
                 )}
