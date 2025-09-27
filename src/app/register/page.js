@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -10,35 +11,54 @@ export default function Register() {
     password: '',
     phone: '',
     areaInSurat: ''
-  });
+  })
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault()
-    alert('Registration functionality will be added with Supabase')
+    setLoading(true)
+
+    const { user, error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password
+    })
+
+    if (error) {
+      alert(error.message)
+      setLoading(false)
+      return
+    }
+
+    // Insert additional user profile data
+    const { error: profileError } = await supabase.from('profiles').insert([
+      {
+        id: user.id,
+        full_name: formData.fullName,
+        phone: formData.phone,
+        area_in_surat: formData.areaInSurat
+      }
+    ])
+
+    if (profileError) {
+      alert(profileError.message)
+    } else {
+      alert('Registration successful! Please check your email to verify your account.')
+      router.push('/login')
+    }
+    setLoading(false)
   }
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+  function handleChange(e) {
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 flex items-center justify-center py-12">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <Image 
-            src="/CW-LOGO.jpg" 
-            alt="Computer World" 
-            width={60} 
-            height={60}
-            className="mx-auto rounded-lg mb-4"
-          />
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-gray-600">Join Computer World for fast appointments</p>
-        </div>
-        
+    <div className="min-h-screen bg-yellow-50 flex items-center justify-center py-12">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-6 text-center">Create Computer World Account</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <input
             type="text"
@@ -46,16 +66,16 @@ export default function Register() {
             placeholder="Full Name"
             value={formData.fullName}
             onChange={handleChange}
-            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+            className="w-full p-3 border rounded-lg"
             required
           />
           <input
             type="email"
             name="email"
-            placeholder="Email Address"
+            placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+            className="w-full p-3 border rounded-lg"
             required
           />
           <input
@@ -64,16 +84,16 @@ export default function Register() {
             placeholder="Phone Number"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+            className="w-full p-3 border rounded-lg"
             required
           />
           <input
             type="text"
             name="areaInSurat"
-            placeholder="Area in Surat (e.g. Adajan, Vesu)"
+            placeholder="Area in Surat"
             value={formData.areaInSurat}
             onChange={handleChange}
-            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+            className="w-full p-3 border rounded-lg"
             required
           />
           <input
@@ -82,30 +102,20 @@ export default function Register() {
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+            className="w-full p-3 border rounded-lg"
             required
           />
-          
           <button
             type="submit"
-            className="w-full bg-yellow-500 text-white p-4 rounded-lg font-bold text-lg hover:bg-yellow-600 transition-all duration-300"
+            disabled={loading}
+            className="w-full bg-yellow-500 text-white p-3 rounded-lg font-semibold"
           >
-            Create Account
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
-        
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
-            Already have an account?{' '}
-            <Link href="/login" className="text-yellow-600 hover:text-yellow-500 font-semibold">
-              Sign In
-            </Link>
-          </p>
-        </div>
-        
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-gray-500 hover:text-gray-400">
-            ← Back to Home
+        <div className="mt-4 text-center">
+          <Link href="/login" className="text-yellow-600 hover:underline">
+            Already have an account? Sign In
           </Link>
         </div>
       </div>
