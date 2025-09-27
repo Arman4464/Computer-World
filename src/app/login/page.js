@@ -1,45 +1,65 @@
 'use client'
 import { useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(''),
+    [password, setPassword] = useState(''),
+    [loading, setLoading] = useState(false),
+    router = useRouter()
 
-  const handleLogin = async (e) => {
+  const supabase = createClient()
+
+  async function handleLogin(e) {
     e.preventDefault()
-    alert('Login functionality will be added with Supabase')
+    setLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+
+    if (error) {
+      alert(error.message)
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        <form onSubmit={handleLogin}>
+        <h1 className="text-2xl font-bold mb-4">Login to Computer World</h1>
+        <form onSubmit={handleLogin} className="space-y-6">
           <input
             type="email"
             placeholder="Email"
+            className="w-full p-3 border rounded-lg"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border rounded-lg mb-4"
+            required
           />
           <input
             type="password"
             placeholder="Password"
+            className="w-full p-3 border rounded-lg"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border rounded-lg mb-4"
+            required
           />
           <button
             type="submit"
-            className="w-full bg-yellow-500 text-white p-3 rounded-lg"
+            className="w-full bg-yellow-500 text-white p-3 rounded-lg font-semibold"
+            disabled={loading}
           >
-            Sign In
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        <Link href="/" className="block text-center mt-4 text-gray-500">
-          ← Back to Home
-        </Link>
+        <div className="mt-4 text-center">
+          <Link href="/register" className="text-yellow-600 hover:underline">
+            Create an account
+          </Link>
+        </div>
       </div>
     </div>
   )
