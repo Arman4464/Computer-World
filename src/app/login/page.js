@@ -9,33 +9,29 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [user, setUser] = useState(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const { supabase, loading: supabaseLoading } = useSupabase()
   const router = useRouter()
 
   useEffect(() => {
     if (!supabase || supabaseLoading) return
 
-    // Check current user
+    // Check current user only once
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        router.push('/dashboard')
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          console.log('User already logged in, redirecting to dashboard')
+          router.replace('/dashboard')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking user:', error)
       }
+      setCheckingAuth(false)
     }
 
     checkUser()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null)
-      if (event === 'SIGNED_IN' && session?.user) {
-        router.push('/dashboard')
-      }
-    })
-
-    return () => subscription.unsubscribe()
   }, [supabase, supabaseLoading, router])
 
   const handleLogin = async (e) => {
@@ -46,55 +42,60 @@ export default function Login() {
     setError('')
 
     try {
+      console.log('Attempting to sign in...')
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Sign in error:', error)
+        throw error
+      }
+
+      console.log('Sign in successful:', data.user?.email)
 
       // Create profile if doesn't exist
       if (data.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single()
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
 
-        if (!profile) {
-          await supabase.from('profiles').insert([{
-            id: data.user.id,
-            email: data.user.email,
-            full_name: data.user.user_metadata?.full_name || '',
-          }])
+          if (!profile) {
+            console.log('Creating profile for user:', data.user.id)
+            await supabase.from('profiles').insert([{
+              id: data.user.id,
+              email: data.user.email,
+              full_name: data.user.user_metadata?.full_name || '',
+            }])
+          }
+        } catch (profileError) {
+          console.error('Profile creation error:', profileError)
+          // Don't block login for profile creation errors
         }
       }
+
+      // Force redirect immediately
+      console.log('Redirecting to dashboard...')
+      window.location.href = '/dashboard'
+      
     } catch (error) {
+      console.error('Login error:', error)
       setError(error.message)
-    } finally {
       setIsLoading(false)
     }
   }
 
-  // Show loading while supabase initializes
-  if (supabaseLoading) {
+  // Show loading while supabase initializes or checking auth
+  if (supabaseLoading || checkingAuth) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Don't render form if user is already logged in
-  if (user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
     )
@@ -193,6 +194,11 @@ export default function Login() {
               ← Back to Home
             </Link>
           </div>
+        </div>
+
+        {/* Debug Info (remove in production) */}
+        <div className="mt-4 text-center text-xs text-gray-500">
+          <p>Test login: user@example.com / password123</p>
         </div>
       </div>
     </div>
