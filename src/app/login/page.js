@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -12,64 +12,45 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [user, setUser] = useState(null)
   const router = useRouter()
-  const [supabase, setSupabase] = useState(null)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const client = createClient()
-    setSupabase(client)
-  }, [])
-
-  useEffect(() => {
-    if (!supabase) return;
-
     async function checkSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          setUser(session.user)
-          router.replace('/dashboard')
-        } else {
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('Failed to check session:', err)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        setUser(session.user)
+        window.location.href = '/dashboard'
+      } else {
         setLoading(false)
       }
     }
-
     checkSession()
+  }, [supabase])
 
-  }, [supabase, router])
-
-  async function handleLogin(e) {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    if (!supabase) return;
-
     setIsSubmitting(true)
     setError('')
-
     try {
-      let { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       })
-
       if (error) throw error
 
       window.location.href = '/dashboard'
-    } catch (err) {
-      setError(err.message)
+    } catch (error) {
+      setError(error.message)
       setIsSubmitting(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="min-h-screen flex justify-center items-center bg-yellow-50">
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-yellow-300 border-t-yellow-600 rounded-full animate-spin mx-auto"></div>
-          <p className="mt-2 text-yellow-600 font-semibold">Checking session...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-600 border-gray-200 mx-auto"></div>
+          <p className="mt-4 text-yellow-700 text-lg">Checking session...</p>
         </div>
       </div>
     )
@@ -77,10 +58,10 @@ export default function Login() {
 
   if (user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="min-h-screen flex justify-center items-center bg-yellow-50">
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-yellow-300 border-t-yellow-600 rounded-full animate-spin mx-auto"></div>
-          <p className="mt-2 text-yellow-600 font-semibold">Redirecting to dashboard...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-600 border-gray-200 mx-auto"></div>
+          <p className="mt-4 text-yellow-700 text-lg">Redirecting to dashboard...</p>
         </div>
       </div>
     )
@@ -92,15 +73,14 @@ export default function Login() {
         <h2 className="text-3xl font-bold mb-6 text-center">Sign In to Computer World</h2>
 
         {error && (
-          <div className="mb-4 px-4 py-3 text-red-700 bg-red-100 rounded">
-            {error}
-          </div>
+          <div className="mb-4 p-3 text-red-700 bg-red-100 rounded">{error}</div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block mb-1 font-medium">Email address</label>
+            <label className="block mb-1 font-medium" htmlFor="email">Email address</label>
             <input
+              id="email"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -112,8 +92,9 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">Password</label>
+            <label className="block mb-1 font-medium" htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               placeholder="••••••••"
               value={password}
