@@ -2,35 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function Home() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="relative w-12 h-12">
-              <Image 
-                src="/CW-LOGO.jpg" 
-                alt="Computer World Logo" 
-                width={48}
-                height={48}
-                className="rounded-lg"
-                priority
-              />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">COMPUTER WORLD</h1>
-              <p className="text-sm text-yellow-600">YOUR IT PARTNER</p>
-            </div>
-          </div>
-          <nav className="space-x-4">
-            <Link href="/login" className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition-colors">
-              Book Appointment
-            </Link>
-          </nav>
-        </div>
-      </header>
-  
   const services = [
     {
       name: "Screen Replacement",
@@ -64,45 +35,18 @@ export default function Home() {
     }
   ];
 
-  const features = [
-    {
-      icon: "🚗",
-      title: "Doorstep Service",
-      description: "We come to your location anywhere in Surat",
-      details: "Travel charges: ₹100-250 based on location"
-    },
-    {
-      icon: "⚡",
-      title: "Same Day Service",
-      description: "Most repairs completed within hours",
-      details: "Emergency service available with priority booking"
-    },
-    {
-      icon: "🛡️",
-      title: "30-Day Warranty",
-      description: "All repairs backed by our guarantee",
-      details: "No-fix, no-charge policy with original parts"
-    },
-    {
-      icon: "⭐",
-      title: "5+ Years Experience",
-      description: "500+ satisfied customers in Surat",
-      details: "Certified technicians with proven expertise"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="relative">
+            <div className="relative w-12 h-12">
               <Image 
                 src="/CW-LOGO.jpg" 
                 alt="Computer World Logo" 
-                width={60} 
-                height={60}
+                width={48}
+                height={48}
                 className="rounded-lg shadow-md"
                 priority
               />
@@ -207,21 +151,46 @@ export default function Home() {
             <p className="text-xl text-gray-600">Trusted by 500+ customers across Surat</p>
           </div>
           <div className="grid lg:grid-cols-2 md:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <div 
-                key={index} 
-                className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="text-4xl">{feature.icon}</div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold mb-2 text-gray-900">{feature.title}</h4>
-                    <p className="text-gray-700 mb-3 text-lg">{feature.description}</p>
-                    <p className="text-yellow-600 font-medium">{feature.details}</p>
-                  </div>
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-start space-x-4">
+                <div className="text-4xl">🚗</div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold mb-2 text-gray-900">Doorstep Service</h4>
+                  <p className="text-gray-700 mb-3 text-lg">We come to your location anywhere in Surat</p>
+                  <p className="text-yellow-600 font-medium">Travel charges: ₹100-250 based on location</p>
                 </div>
               </div>
-            ))}
+            </div>
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-start space-x-4">
+                <div className="text-4xl">⚡</div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold mb-2 text-gray-900">Same Day Service</h4>
+                  <p className="text-gray-700 mb-3 text-lg">Most repairs completed within hours</p>
+                  <p className="text-yellow-600 font-medium">Emergency service available with priority booking</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-start space-x-4">
+                <div className="text-4xl">🛡️</div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold mb-2 text-gray-900">30-Day Warranty</h4>
+                  <p className="text-gray-700 mb-3 text-lg">All repairs backed by our guarantee</p>
+                  <p className="text-yellow-600 font-medium">No-fix, no-charge policy with original parts</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-start space-x-4">
+                <div className="text-4xl">⭐</div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold mb-2 text-gray-900">5+ Years Experience</h4>
+                  <p className="text-gray-700 mb-3 text-lg">500+ satisfied customers in Surat</p>
+                  <p className="text-yellow-600 font-medium">Certified technicians with proven expertise</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
