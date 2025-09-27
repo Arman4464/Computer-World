@@ -13,40 +13,89 @@ export default function Dashboard() {
   useEffect(() => {
     async function getUser() {
       try {
+        console.log('Dashboard: Checking session...')
         const { data: { session } } = await supabase.auth.getSession()
+        
+        console.log('Dashboard: Session data:', session)
+        
         if (session?.user) {
+          console.log('Dashboard: User found:', session.user.email)
           setUser(session.user)
+          setLoading(false)
         } else {
-          router.replace('/login')
+          console.log('Dashboard: No user, redirecting to login')
+          // Clear any cached state
+          setUser(null)
+          setLoading(false)
+          // Force redirect
+          window.location.href = '/login'
+          return
         }
       } catch (error) {
-        console.error('Error:', error)
-        router.replace('/login')
-      } finally {
+        console.error('Dashboard: Error checking session:', error)
+        setUser(null)
         setLoading(false)
+        window.location.href = '/login'
       }
     }
 
     getUser()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Dashboard: Auth state changed:', event, session)
+      
+      if (event === 'SIGNED_OUT' || !session) {
+        console.log('Dashboard: User signed out, redirecting to login')
+        setUser(null)
+        window.location.href = '/login'
+      } else if (event === 'SIGNED_IN' && session) {
+        console.log('Dashboard: User signed in:', session.user.email)
+        setUser(session.user)
+        setLoading(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [router])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.replace('/')
+    try {
+      console.log('Dashboard: Signing out...')
+      await supabase.auth.signOut()
+      setUser(null)
+      // Force redirect to home
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Dashboard: Sign out error:', error)
+      // Force redirect even if error
+      window.location.href = '/'
+    }
   }
 
+  // Show loading while checking auth
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-gray-600">Checking authentication...</p>
         </div>
       </div>
     )
   }
 
-  if (!user) return null
+  // Show nothing while redirecting
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -75,7 +124,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Welcome!</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Welcome Back!</h2>
             <p className="text-gray-600 mb-4">You're successfully logged in to Computer World.</p>
             <Link
               href="/book-appointment"
@@ -97,6 +146,19 @@ export default function Dashboard() {
               <Link href="/book-appointment" className="block text-yellow-600 hover:text-yellow-800">📅 Book Appointment</Link>
               <a href="tel:+919876543210" className="block text-gray-600 hover:text-gray-800">📞 Call Support</a>
               <a href="https://wa.me/919876543210" className="block text-green-600 hover:text-green-800">💬 WhatsApp</a>
+            </div>
+          </div>
+
+          {/* Success indicator */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 md:col-span-2 lg:col-span-3">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <div>
+                <h3 className="text-lg font-semibold text-green-800">Authentication Working!</h3>
+                <p className="text-green-700">Login/logout flow is working correctly.</p>
+              </div>
             </div>
           </div>
         </div>
