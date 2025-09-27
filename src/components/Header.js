@@ -1,42 +1,23 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [user, setUser] = useState(null)
-  const [scrolled, setScrolled] = useState(false)
-  const supabase = createClient()
+  const { user, signOut, loading } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    checkUser()
-    
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
+  const handleSignOut = async () => {
+    const { error } = await signOut()
+    if (!error) {
+      router.push('/')
     }
-    
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  async function checkUser() {
-    const { data: { session } } = await supabase.auth.getSession()
-    setUser(session?.user || null)
-  }
-
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    setUser(null)
-    router.push('/')
   }
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-white'
-    }`}>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-lg">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -57,7 +38,7 @@ export default function Header() {
             <Link href="/#services" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors">
               Services
             </Link>
-            <Link href="/#why-choose-us" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors">
+            <Link href="/#about" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors">
               About
             </Link>
             <Link href="/#testimonials" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors">
@@ -67,7 +48,9 @@ export default function Header() {
               Contact
             </Link>
             
-            {user ? (
+            {loading ? (
+              <div className="w-8 h-8 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
+            ) : user ? (
               <div className="flex items-center space-x-4">
                 <Link href="/dashboard" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors">
                   Dashboard
@@ -78,15 +61,20 @@ export default function Header() {
                 >
                   Book Service
                 </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                  title="Sign Out"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-gray-500 hover:text-red-600 transition-colors"
+                    title="Sign Out"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -125,7 +113,7 @@ export default function Header() {
               <Link href="/#services" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
                 Services
               </Link>
-              <Link href="/#why-choose-us" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
+              <Link href="/#about" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
                 About
               </Link>
               <Link href="/#testimonials" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
@@ -136,8 +124,15 @@ export default function Header() {
               </Link>
               
               <div className="border-t pt-3 mt-3">
-                {user ? (
+                {loading ? (
+                  <div className="px-3 py-2">
+                    <div className="w-6 h-6 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
+                  </div>
+                ) : user ? (
                   <>
+                    <div className="px-3 py-2 text-sm text-gray-600">
+                      Signed in as {user.email}
+                    </div>
                     <Link href="/dashboard" className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-md transition-colors">
                       Dashboard
                     </Link>
