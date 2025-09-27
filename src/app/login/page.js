@@ -1,59 +1,78 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const { user, signIn, loading: authLoading } = useAuth()
+  const [authLoading, setAuthLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (user && !authLoading) {
-      router.push('/dashboard')
+    async function checkUser() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          router.push('/dashboard')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking session:', error)
+      }
+      setAuthLoading(false)
     }
-  }, [user, authLoading, router])
+    checkUser()
+  }, [router])
 
-  const handleLogin = async (e) => {
+  async function handleLogin(e) {
     e.preventDefault()
-    setIsLoading(true)
+    setLoading(true)
     setError('')
 
-    const { data, error } = await signIn(email, password)
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) throw error
+
+      // Create profile if doesn't exist
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single()
+
+        if (!profile) {
+          await supabase.from('profiles').insert([{
+            id: data.user.id,
+            email: data.user.email,
+            full_name: data.user.user_metadata?.full_name || '',
+          }])
+        }
+      }
+
+      router.push('/dashboard')
+    } catch (error) {
       setError(error.message)
-      setIsLoading(false)
-    } else {
-      // Success - redirect will happen via useEffect
-      console.log('Login successful')
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Show loading while checking auth state
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Don't render form if user is logged in (prevents flash)
-  if (user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to dashboard...</p>
+          <p className="text-gray-600">Checking authentication...</p>
         </div>
       </div>
     )
@@ -92,7 +111,7 @@ export default function Login() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                 placeholder="Enter your email"
                 required
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
 
@@ -107,16 +126,16 @@ export default function Login() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                 placeholder="Enter your password"
                 required
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || !email || !password}
+              disabled={loading || !email || !password}
               className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl"
             >
-              {isLoading ? (
+              {loading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Signing In...</span>
@@ -152,20 +171,8 @@ export default function Login() {
               >
                 ← Back to Home
               </Link>
-              
-              <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
-                <span>🔒 Secure Login</span>
-                <span>•</span>
-                <span>⚡ Quick Access</span>
-              </div>
             </div>
           </div>
-        </div>
-
-        {/* Trust Signals */}
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>Protected by enterprise-grade security</p>
-          <p className="mt-2">500+ customers trust Computer World</p>
         </div>
       </div>
     </div>
