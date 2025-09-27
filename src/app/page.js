@@ -6,26 +6,6 @@ import Header from '@/components/Header'
 export default function Home() {
   const { user, loading } = useAuth()
 
-  // ... rest of your existing code stays the same, just replace user state with the one from useAuth
-
-  
-  const supabase = createClient()
-
-  useEffect(() => {
-    checkUser()
-  }, [])
-
-  async function checkUser() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user || null)
-    } catch (error) {
-      console.error('Error checking user:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const services = [
     {
       name: "Screen Replacement",
