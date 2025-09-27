@@ -1,12 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/client'
 import Header from '@/components/Header'
 
 export default function Home() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading } = useAuth()
+
+  // ... rest of your existing code stays the same, just replace user state with the one from useAuth
+
   
   const supabase = createClient()
 
