@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Performance optimizations
+  // Remove problematic experimental features
   experimental: {
-    optimizeCss: true,
+    // Remove optimizeCss - causes critters module error
+    // optimizeCss: true, // <- Remove this line
     optimizePackageImports: ['lucide-react'],
   },
   
@@ -39,21 +40,7 @@ const nextConfig = {
             key: 'X-Content-Type-Options',
             value: 'nosniff'
           },
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
         ],
-      },
-    ]
-  },
-
-  // PWA-like caching
-  async rewrites() {
-    return [
-      {
-        source: '/sw.js',
-        destination: '/_next/static/sw.js',
       },
     ]
   },
