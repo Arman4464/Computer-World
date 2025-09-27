@@ -1,5 +1,6 @@
 import './globals.css'
 import { ToastProvider } from '@/components/Toast'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export const metadata = {
   title: 'Computer World - Your IT Partner',
@@ -10,9 +11,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   )
