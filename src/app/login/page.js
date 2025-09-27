@@ -30,7 +30,7 @@ export default function Login() {
           setUser(session.user)
           router.replace('/dashboard')
         } else {
-          setLoading(false) // No session means show login form
+          setLoading(false)
         }
       } catch (err) {
         console.error('Failed to check session:', err)
@@ -57,7 +57,6 @@ export default function Login() {
 
       if (error) throw error
 
-      // Redirect instead of router.push to force reload
       window.location.href = '/dashboard'
     } catch (err) {
       setError(err.message)
