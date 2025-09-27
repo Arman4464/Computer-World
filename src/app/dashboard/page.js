@@ -7,6 +7,7 @@ import Link from 'next/link'
 export default function Dashboard() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
   const { supabase, loading: supabaseLoading } = useSupabase()
   const router = useRouter()
 
@@ -14,23 +15,45 @@ export default function Dashboard() {
     if (!supabase || supabaseLoading) return
 
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.user) {
-        router.push('/login')
-        return
+      try {
+        console.log('Dashboard: Checking user session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Dashboard: Session error:', error)
+          router.replace('/login')
+          return
+        }
+
+        if (!session?.user) {
+          console.log('Dashboard: No user found, redirecting to login')
+          router.replace('/login')
+          return
+        }
+
+        console.log('Dashboard: User found:', session.user.email)
+        setUser(session.user)
+
+        // Get profile
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+
+          setProfile(profileData)
+        } catch (profileError) {
+          console.error('Dashboard: Profile fetch error:', profileError)
+          // Don't block dashboard for profile errors
+        }
+
+      } catch (error) {
+        console.error('Dashboard: Error:', error)
+        router.replace('/login')
+      } finally {
+        setLoading(false)
       }
-
-      setUser(session.user)
-
-      // Get profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-
-      setProfile(profileData)
     }
 
     getUser()
@@ -39,16 +62,31 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     if (!supabase) return
     
-    await supabase.auth.signOut()
-    router.push('/')
+    try {
+      console.log('Signing out...')
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
   }
 
-  if (supabaseLoading || !user) {
+  if (supabaseLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecting to login...</p>
         </div>
       </div>
     )
@@ -70,7 +108,7 @@ export default function Dashboard() {
               <span className="text-gray-600">Hello, {user.email}</span>
               <button
                 onClick={handleSignOut}
-                className="text-red-600 hover:text-red-800 transition-colors"
+                className="text-red-600 hover:text-red-800 transition-colors px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50"
               >
                 Sign Out
               </button>
@@ -133,6 +171,19 @@ export default function Dashboard() {
               >
                 💬 WhatsApp Chat
               </a>
+            </div>
+          </div>
+
+          {/* Success Message */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 md:col-span-2 lg:col-span-3">
+            <div className="flex items-center">
+              <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <div>
+                <h3 className="text-lg font-semibold text-green-800">Login Successful!</h3>
+                <p className="text-green-700">You are now logged in to your Computer World account.</p>
+              </div>
             </div>
           </div>
         </div>
